@@ -1,0 +1,16 @@
+{
+    "perl" : "6.c",
+    "name" : "Email::DKIM",
+    "version" : "0.1.0",
+    "description" : "DKIM signer / verifier for MIME messages.",
+    "authors" : [ "Pawel (bbkr) Pabian" ],
+    "license" : "Artistic-2.0",
+    "provides" : {
+        "Email::DKIM" : "lib/Email/DKIM.pm",
+        "Email::DKIM::Signer" : "lib/Email/DKIM/Signer.pm",
+        "Email::DKIM::Verifier" : "lib/Email/DKIM/Verifier.pm"
+    },
+    "depends" : [ "Email::MIME" ],
+    "resources" : [ ],
+    "source-url" : "git@github.com:bbkr/EmailDKIM.git"
+}
