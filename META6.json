@@ -10,7 +10,7 @@
         "Email::DKIM::Signer" : "lib/Email/DKIM/Signer.pm",
         "Email::DKIM::Verifier" : "lib/Email/DKIM/Verifier.pm"
     },
-    "depends" : [ "Email::MIME" ],
+    "depends" : [ "Email::MIME", "OpenSSL" ],
     "resources" : [ ],
     "source-url" : "git@github.com:bbkr/EmailDKIM.git"
 }
