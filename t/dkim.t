@@ -5,7 +5,20 @@ use Email::MIME;
 use MIME::Base64;
 use OpenSSL::RSATools;
 
+use Email::DKIM::Signer;
+
 plan 1;
+
+my $new = Email::MIME.create(header-str => ['from' => 'root+github@retupmoca.com',
+                                            'subject' => 'This is a»test.'],
+                             attributes => {'content-type' => 'text/plain',
+                                            'charset' => 'utf-8',
+                                            'encoding' => 'base64'},
+                             body-str => 'Hello«World zażółć gęślą jaźń' ~ "foo\r\nbar"~ "foo\r\nbar"~ "foo\r\nbar"~ "foo\r\nbar"~ "foo\r\nbar"~ "foo\r\nbar"~ "foo\r\nbar");
+warn "X"~$new~"Y";
+
+warn Email::DKIM::Signer.normalize($new.Str);
+=finish
 
 # Integration test to confirm that we can go full circle:
 # sign text data, transport signatures in text form and verify text data.
