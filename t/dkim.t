@@ -8,7 +8,7 @@ use OpenSSL::RSATools;
 use Email::DKIM;
 use Email::DKIM::Signer;
 
-plan 2;
+plan 4;
 
 # Integration test to confirm that we can go full circle:
 # sign text data, transport signatures in text form and verify text data.
@@ -56,6 +56,18 @@ subtest 'canonicalization header simple' => sub {
     
     plan 1;
     
-    is Email::DKIM.canonicalize_header_simple("SubjEct: foo \r\n bar \r\n"), "SubjEct: foo \r\n bar \r\n", 'header is not altered';
+    is Email::DKIM.canonicalize_header_simple("SubjEct: foo \x0D\x0A bar \x0D\x0A"),
+        "SubjEct: foo \x0D\x0A bar \x0D\x0A", 'header is not altered';
+    
+};
+
+# https://tools.ietf.org/html/rfc6376#section-3.4.3
+subtest 'canonicalization body simple' => sub {
+    
+    plan 3;
+    
+    is Email::DKIM.canonicalize_body_simple(""), "\x0D\x0A", 'empty normalized';
+    is Email::DKIM.canonicalize_body_simple("\x0D\x0A"), "\x0D\x0A", 'single sequence CRLF at the end left intact';
+    is Email::DKIM.canonicalize_body_simple("\x0D\x0A\x0D\x0A"), "\x0D\x0A", 'multiple sequence CRLF at the end normalized';
     
 };

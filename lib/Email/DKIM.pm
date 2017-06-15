@@ -54,3 +54,24 @@ method canonicalize_header_simple ( Str:D $text is copy --> Str:D ) {
     return $text;
 }
 
+=begin pod
+
+=head3 canonicalize_body_simple
+
+Canonicalize body using simple algorithm,
+see L<https://tools.ietf.org/html/rfc6376#section-3.4.3>.
+
+=end pod
+
+method canonicalize_body_simple ( Str:D $text is copy --> Str:D ) {
+    
+    # SPEC: The "simple" body canonicalization algorithm ignores all empty lines
+    #       at the end of the message body. An empty line is a line of zero
+    #       length after removal of the line terminator.
+    #       If there is no body or no trailing CRLF on the message body, a CRLF is added.
+    
+    # TODO: a bit naive method, should be optimized later
+    $text ~~ s/ [\x0D\x0A]* $/\x0D\x0A/;
+    
+    return $text;
+}
