@@ -6,7 +6,6 @@ use MIME::Base64;
 use OpenSSL::RSATools;
 
 use Email::DKIM;
-use Email::DKIM::Signer;
 
 plan 4;
 
