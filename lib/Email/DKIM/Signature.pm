@@ -65,9 +65,12 @@ has Canonicalization $.body-canonicalization is required;
 
 =head3 domain
 
-
+The SDID claiming responsibility for an introduction
+of a message into the mail stream.
 
 =end pod
 
 has Str $.domain is required;
+
+has Str $.selector;
 
