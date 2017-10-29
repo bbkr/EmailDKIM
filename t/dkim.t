@@ -1,6 +1,14 @@
 use lib 'lib';
 
 use Test;
+use Email::DKIM;
+
+
+Email::DKIM.new(message => "Foo: bar\r\n baz\r\nTest: ab\r\n\r\n");
+
+
+=finish
+
 use Email::MIME;
 use MIME::Base64;
 use OpenSSL::RSATools;
