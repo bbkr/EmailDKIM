@@ -1,32 +1,44 @@
-# grammar to parse MIME messages
-# according to https://tools.ietf.org/html/rfc5322#section-2.2
-# with few simplifications mentioned below that are irrelevant
-# for signing/verification but greatly speed up parsing process
-unit grammar MIME;
-    
+unit grammar Email::DKIM::Parser::Grammar;
+
+=begin pod
+
+=head1 NAME
+
+Email::DKIM::Parser::Grammar
+
+=head1 DESCRIPTION
+
+Parses MIME messages according to L<https://tools.ietf.org/html/rfc5322>
+with few simplifications mentioned below that are irrelevant
+for signing/verification but greatly speed up parsing process
+
+=head1 METHODS
+
+=end pod
+
+=begin pod
+
+=head2 TOP
+
+Matches whole string.
+
+=end pod
+
 token TOP {
     
     ^ <message> $
     
 }
 
-# line delimiter in message,
-# grammar already uses normalized form to speed up canonicalization later
-token newline {
-    
-    # SPEC: Normalize the Message to Prevent Transport Conversions
-    #       https://tools.ietf.org/html/rfc6376#section-5.3
-    #       
-    #       In particular, bare CR or LF characters
-    #       (used by some systems as a local line separator convention)
-    #       MUST be converted to the SMTP-standard CRLF sequence
-    #       before the message is signed.
-    \x0D\x0A | \x0D | \x0A
-    
-}
+=begin pod
 
-# https://tools.ietf.org/html/rfc5322#section-2.1
-# 998 character maximum line length is ignored
+=head2 message
+
+Matches message as defined in L<https://tools.ietf.org/html/rfc5322#section-2>.
+Maximum line length of 998 characters requirement is ignored.
+
+=end pod
+
 token message {
     
     <header>+
@@ -35,8 +47,15 @@ token message {
     
 }
 
-# https://tools.ietf.org/html/rfc5322#section-2.2
-# structured headers are not analyzed
+=begin pod
+
+=head2 header
+
+Matches header as defined in L<https://tools.ietf.org/html/rfc5322#section-2.2>.
+Structured headers are not analyzed.
+
+=end pod
+
 token header {
     
     # SPEC: Header fields are lines beginning with a field name
@@ -69,10 +88,39 @@ token header {
 
 }
 
-# https://tools.ietf.org/html/rfc5322#section-2.3
+=begin pod
+
+=head2 body
+
+Matches body as defined in L<https://tools.ietf.org/html/rfc5322#section-2.3>.
+
+=end pod
+
 token body {
     
     # SPEC: The body of a message is simply lines of US-ASCII characters.
     [ $<line> = [ <+ [\x00 .. \x7F ] >*? ] <.newline> ]*
     [ $<line> = [ <+ [\x00 .. \x7F ]>+ ] ]?
+}
+
+=begin pod
+
+=head2 newline
+
+Matches line delimiter in message.
+To speed up canonicalization normalized newlines are used.
+
+=end pod
+
+token newline {
+    
+    # SPEC: Normalize the Message to Prevent Transport Conversions
+    #       https://tools.ietf.org/html/rfc6376#section-5.3
+    #       
+    #       In particular, bare CR or LF characters
+    #       (used by some systems as a local line separator convention)
+    #       MUST be converted to the SMTP-standard CRLF sequence
+    #       before the message is signed.
+    \x0D\x0A | \x0D | \x0A
+    
 }

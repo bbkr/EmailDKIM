@@ -4,7 +4,7 @@ use Test;
 use Email::DKIM;
 
 
-Email::DKIM.new(message => "Foo: bar\r\n baz\r\nTest: ab\r\n\r\n");
+Email::DKIM.new(message => "Foo: bar\r\n baz\r\nTest: ab\r\n\r\n\r\n");
 
 
 =finish

@@ -1,87 +1,5 @@
 unit class Email::DKIM;
 
-# grammar to parse MIME messages
-# according to https://tools.ietf.org/html/rfc5322#section-2.2
-# with few simplifications mentioned below that are irrelevant
-# for signing/verification but greatly speed up parsing process
-grammar MIME {
-    
-    token TOP {
-        
-        ^ <message> $
-        
-    }
-    
-    # line delimiter in message,
-    # grammar already uses normalized form to speed up canonicalization later
-    token newline {
-        
-        # SPEC: Normalize the Message to Prevent Transport Conversions
-        #       https://tools.ietf.org/html/rfc6376#section-5.3
-        #       
-        #       In particular, bare CR or LF characters
-        #       (used by some systems as a local line separator convention)
-        #       MUST be converted to the SMTP-standard CRLF sequence
-        #       before the message is signed.
-        \x0D\x0A | \x0D | \x0A
-        
-    }
-    
-    # https://tools.ietf.org/html/rfc5322#section-2.1
-    # 998 character maximum line length is ignored
-    token message {
-        
-        <header>+
-        <newline>
-        <body>?
-        
-    }
-    
-    # https://tools.ietf.org/html/rfc5322#section-2.2
-    # structured headers are not analyzed
-    token header {
-        
-        # SPEC: Header fields are lines beginning with a field name
-        #       followed by a colon, followed by a field body.
-        #       A field name MUST be composed of
-        #       printable US-ASCII characters except colon.
-        $<name> = [ <+ [ \x21 .. \x7E ] - [:] >+ ]
-        
-        # note that RFC 5322 does not allow WSP between header name and colon
-        # but RFC 6376 tells how to canonicalize it so it is also allowed while parsing
-        $<separator> = [ [ \x09 | \x20 ]* ':' [ \x09 | \x20 ]* ]
-        
-        # SPEC: A field body may be composed of printable US-ASCII characters
-        #       as well as the space and horizontal tab characters
-        $<body> = [ <+ [ \x21 .. \x7E \x20 \x09 ] >* ]
-        
-        # SPEC: For convenience however,
-        #       and to deal with the 998/78 character limitations per line,
-        #       the field body portion of a header field can be split into
-        #       a multiple-line representation; this is called "folding".
-        #       The general rule is that wherever this specification
-        #       allows for folding white space (not simply WSP characters),
-        #       a CRLF may be inserted before any WSP.
-        [
-            <.newline> [ \x09 | \x20 ]+
-            $<body> = [ <+ [ \x21 .. \x7E \x20 \x09 ] >* ]
-        ]*
-        
-        <.newline>
-    
-    }
-    
-    # https://tools.ietf.org/html/rfc5322#section-2.3
-    token body {
-        
-        [
-            $<line> = [ <- [ \x0D | \x0A ] >* ] <.newline>
-        ]*
-        $<line> = [ <- [ \x0D | \x0A ] >* ]
-    }
-
-}
-
 submethod BUILD ( Str:D :$message! ) {
     my $parsed =  MIME.parse( $message );
     say $parsed;
@@ -101,7 +19,11 @@ class Header {
 
 submethod BUILD ( Str:D :$message! ) {
     
-    # message is split into lines to make future operations easier
+    # track what next line can contain
+    my $expected = 'header_start';
+    
+    # track last header in case of continuation
+    my $last_header;
     
     # SPEC: Normalize the Message to Prevent Transport Conversions
     #       https://tools.ietf.org/html/rfc6376#section-5.3
@@ -110,14 +32,8 @@ submethod BUILD ( Str:D :$message! ) {
     #       (used by some systems as a local line separator convention)
     #       MUST be converted to the SMTP-standard CRLF sequence
     #       before the message is signed.
-    
-    # track what next line can contain
-    my $expected = 'header_start';
-    
-    # tracking last header may be needed for 
-    my $last_header;
-    
-    # split by normalized newlines
+    #
+    # 
     for split / \x0D\x0A | \x0D | \x0A /, $message -> $line {
         
         
