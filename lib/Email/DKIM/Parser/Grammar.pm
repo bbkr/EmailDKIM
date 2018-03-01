@@ -18,20 +18,6 @@ for signing/verification but greatly speed up parsing process
 
 =begin pod
 
-=head2 TOP
-
-Matches whole string.
-
-=end pod
-
-token TOP {
-    
-    ^ <message> $
-    
-}
-
-=begin pod
-
 =head2 message
 
 Matches message as defined in L<https://tools.ietf.org/html/rfc5322#section-2>.
@@ -39,11 +25,13 @@ Maximum line length of 998 characters requirement is ignored.
 
 =end pod
 
-token message {
+token TOP {
     
+    ^
     <header>+
     <.newline>
     <body>?
+    $
     
 }
 
@@ -101,6 +89,7 @@ token body {
     # SPEC: The body of a message is simply lines of US-ASCII characters.
     [ $<line> = [ <+ [\x00 .. \x7F ] >*? ] <.newline> ]*
     [ $<line> = [ <+ [\x00 .. \x7F ]>+ ] ]?
+    
 }
 
 =begin pod

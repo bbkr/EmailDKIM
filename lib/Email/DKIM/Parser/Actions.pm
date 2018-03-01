@@ -1,6 +1,7 @@
 unit grammar Email::DKIM::Parser::Actions;
 
 use Email::DKIM::Header;
+use Email::DKIM::Body;
 
 =begin pod
 
@@ -20,17 +21,27 @@ Convert parsed tokens into L<Email::DKIM::Header>s and L<Email::DKIM::Body>.
 
 =head2 TOP
 
-Return Array of Headers and single Body objects.
+Return Hash of Array of Header instances and single Body instance.
 
 =end pod
 
 method TOP ( $/ ) {
     
-    return;
-    
+    make ( $/{ 'header' }.classify( *.made.name.lc, as => *.made ).item, $/{ 'body' }.made );
 }
 
 method header ( $/ ) {
-    say $/;
+    
+    make Email::DKIM::Header.new(
+        name => $/{ 'name' }.Str,
+        separator => $/{ 'separator' }.Str,
+        body => $/{ 'body' }.Str
+    );
+}
 
+method body ( $/ ) {
+    
+    make Email::DKIM::Body.new(
+        lines => $/{ 'line' }.map: *.Str
+    );
 }
