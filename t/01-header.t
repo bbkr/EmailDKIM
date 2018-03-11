@@ -5,25 +5,35 @@ use lib 'lib';
 use Test;
 use Email::DKIM::Header;
 
-plan 3;
+plan 2;
 
-my $header;
+subtest 'canonicalization simple' => sub {
 
-$header = Email::DKIM::Header.new(
-    name => 'Foo',
-    separator => ':',
-    body => [ 'Bar' ]
-);
+    plan 3;
 
-is $header.canonicalize( 'simple' ), "Foo:Bar\r\n", 'basic header canonicalized using simple algorithm';
-is $header.canonicalize( 'simple' ), "Foo:Bar\r\n", 'canonicalization cache';
+    my $header = Email::DKIM::Header.new(
+        name => 'Foo',
+        separator => ':',
+        body => [ 'Bar' ]
+    );
 
-$header = Email::DKIM::Header.new(
-    name => '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~',
-    separator => " \t:\t ",
-    body => [ 'Bar ', '  B az' ]
-);
+    is $header.canonicalize( 'simple' ), "Foo:Bar\r\n", 'with letters only';
+    is $header.canonicalize( 'simple' ), "Foo:Bar\r\n", 'canonicalization cache';
 
-is $header.canonicalize( 'simple' ),
-    "!\"#\$\%\&'()*+,-./0123456789:;<=>?\@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz\{|\}~ \t:\t Bar \r\n  B az\r\n",
-    'complex header canonicalized using simple algorithm';
+    $header = Email::DKIM::Header.new(
+        name => '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~',
+        separator => " \t:\t ",
+        body => [ 'Bar ', '  B az' ]
+    );
+
+    is $header.canonicalize( 'simple' ),
+        "!\"#\$\%\&'()*+,-./0123456789:;<=>?\@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz\{|\}~ \t:\t Bar \r\n  B az\r\n",
+        'with all allowed characters';
+
+};
+
+subtest 'canonicalization relaxed' => sub {
+
+    todo 'NYI';
+    
+};

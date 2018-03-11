@@ -21,7 +21,7 @@ It MUST be C<v1> for RFC 6376.
 
 =end pod
 
-has Version $.version = v1 is required;
+has Version $.version = v1;
 
 =begin pod
 

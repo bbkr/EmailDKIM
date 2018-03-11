@@ -6,53 +6,72 @@ use Test;
 use Email::DKIM::Parser::Grammar;
 use Email::DKIM::Parser::Actions;
 
+plan 2;
+
 my $actions = Email::DKIM::Parser::Actions.new;
 my $printable_ascii = "!" .. "~";
 
-my $message = "Foo: Bar\r\n\r\n";
-my ( $headers, $body ) = Email::DKIM::Parser::Grammar.parse( $message, :$actions ).made;
-is-deeply $headers{ 'foo' }[ 0 ].body, [ 'Bar' ], 'simple header parsed';
-is-deeply $body.lines, [ ], 'empty body parsed';
+subtest 'simple' => sub {
 
+    plan 2;
 
-# header name from all allowed characters
-$message = ($printable_ascii (-) ":").keys.sort.join;
+    # message with single header and no body
+    my $message = "Foo: Bar\r\n\r\n";
 
-# header separator
-# note that DKIM canonicalization allows trailing whitespaces while MIME does not
-$message ~= "\t : \t";
+    my ( %headers, $body ) := Email::DKIM::Parser::Grammar.parse( $message, :$actions ).made;
+    is-deeply %headers{ 'foo' }[ 0 ].body, [ 'Bar' ], 'header parsed';
+    is-deeply $body.lines, [ ], 'body parsed';
 
-# header body from all allowed characters
-$message ~= $printable_ascii.sort.join ~ "\t ";
+};
 
-# header continuation
-# note that DKIM normalization allows bare CR or LF line breaks while MIME does not
-$message ~= "\r foo ";
+subtest 'complex' => sub {
 
-# header continuation
-# note that DKIM normalization allows bare CR or LF line breaks while MIME does not
-$message ~= "\n\tbar\t";
+    plan 2;
+    
+    # message with header and body containing all allowed characters
+    # and all MIME exceptions that can be fixed when signing DKIM
+    my $message;
+    
+    # header name from all allowed characters
+    $message = ($printable_ascii (-) ":").keys.sort.join;
 
-# header continuation
-$message ~= "\r\n baz\r\n";
+    # header separator
+    # note that DKIM canonicalization allows trailing whitespaces while MIME does not
+    $message ~= "\t : \t";
 
-# headers and body separator
-$message ~= "\r\n";
+    # header body from all allowed characters
+    $message ~= $printable_ascii.sort.join ~ "\t ";
 
-# body with all ACII characters allowed
-# bare CR and LF will be normalized as newlines
-$message ~= ( "\x[00]" .. "\x[7F]" ).join;
+    # header continuation
+    # note that DKIM normalization allows bare CR or LF line breaks while MIME does not
+    $message ~= "\r foo ";
 
-# body empty line
-$message ~= "\r\n\r\n";
+    # header continuation
+    # note that DKIM normalization allows bare CR or LF line breaks while MIME does not
+    $message ~= "\n\tbar\t";
 
-( $headers, $body ) = Email::DKIM::Parser::Grammar.parse( $message, :$actions ).made;
-is-deeply $headers{ '!"#$%&\'()*+,-./0123456789;<=>?@abcdefghijklmnopqrstuvwxyz[\]^_`abcdefghijklmnopqrstuvwxyz{|}~' }[ 0 ].body,
-    [ "!\"#\$\%\&'()*+,-./0123456789:;<=>?\@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz\{|}~\t ", "foo ", "bar\t", "baz" ],
-    'complex header parsed';
-is-deeply $body.lines, [
-    "\0\x[1]\x[2]\x[3]\x[4]\x[5]\x[6]\x[7]\b\t",
-    "\x[b]\x[c]",
-    "\x[e]\x[f]\x[10]\x[11]\x[12]\x[13]\x[14]\x[15]\x[16]\x[17]\x[18]\x[19]\x[1a]\x[1b]\x[1c]\x[1d]\x[1e]\x[1f] " ~ $printable_ascii.sort.join ~ "\x[7f]",
-    ""
-], 'complex body parsed';
+    # header continuation
+    $message ~= "\r\n baz\r\n";
+
+    # headers and body separator
+    $message ~= "\r\n";
+
+    # body with all ACII characters allowed
+    # bare CR and LF will be normalized as newlines
+    $message ~= ( "\x[00]" .. "\x[7F]" ).join;
+
+    # body empty line
+    $message ~= "\r\n\r\n";
+
+    my ( %headers, $body ) := Email::DKIM::Parser::Grammar.parse( $message, :$actions ).made;
+    is-deeply %headers{ '!"#$%&\'()*+,-./0123456789;<=>?@abcdefghijklmnopqrstuvwxyz[\]^_`abcdefghijklmnopqrstuvwxyz{|}~' }[ 0 ].body,
+        [ "!\"#\$\%\&'()*+,-./0123456789:;<=>?\@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz\{|}~\t ", "foo ", "bar\t", "baz" ],
+        'header parsed';
+    is-deeply $body.lines, [
+        "\0\x[1]\x[2]\x[3]\x[4]\x[5]\x[6]\x[7]\b\t",
+        "\x[b]\x[c]",
+        "\x[e]\x[f]\x[10]\x[11]\x[12]\x[13]\x[14]\x[15]\x[16]\x[17]\x[18]\x[19]\x[1a]\x[1b]\x[1c]\x[1d]\x[1e]\x[1f] " ~ $printable_ascii.sort.join ~ "\x[7f]",
+        ""
+    ], 'body parsed';
+
+};
