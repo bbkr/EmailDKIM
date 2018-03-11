@@ -35,7 +35,7 @@ method header ( $/ ) {
     make Email::DKIM::Header.new(
         name => $/{ 'name' }.Str,
         separator => $/{ 'separator' }.Str,
-        body => $/{ 'body' }.Str
+        body => $/{ 'body' }.map: *.Str
     );
 }
 
