@@ -33,7 +33,7 @@ Only C<rsa-sha256> SHOULD be used for signing.
 
 =end pod
 
-subset Algorithm of Str where 'rsa-sha1' | 'rsa-sha256';
+subset Algorithm of Str is export where 'rsa-sha1' | 'rsa-sha256';
 has Algorithm $.algorithm is required;
 
 =begin pod
@@ -57,7 +57,7 @@ Allowed values are C<simple> and C<relaxed>.
 
 =end pod
 
-subset Canonicalization of Str where 'simple' | 'relaxed';
+subset Canonicalization of Str is export where 'simple' | 'relaxed';
 has Canonicalization $.header-canonicalization is required;
 has Canonicalization $.body-canonicalization is required;
 
